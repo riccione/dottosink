@@ -8,13 +8,12 @@ from scholar_sink.models import Paper
 
 
 def search_arxiv(query: str, limit: int) -> List[Paper]:
-    client = arxiv.Client(num_retries=3)
+    client = arxiv.Client(num_retries=3, delay_seconds=3)
     search = arxiv.Search(query=query, max_results=limit)
     papers = []
 
     for attempt in range(3):
         try:
-            time.sleep(3)
             for result in client.results(search):
                 arxiv_id = result.entry_id.split("/")[-1]
                 paper = Paper(

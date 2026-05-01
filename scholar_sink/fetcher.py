@@ -45,11 +45,10 @@ def search_arxiv(query: str, limit: int) -> List[Paper]:
 
 
 def download_pdf(paper: Paper, folder: Path, pdf_url: str = None) -> Optional[Path]:
-    raw_dir = folder / "raw"
-    raw_dir.mkdir(parents=True, exist_ok=True)
+    folder.mkdir(parents=True, exist_ok=True)
 
     pdf_filename = f"{paper.arxiv_id.replace('/', '_')}.pdf"
-    pdf_path = raw_dir / pdf_filename
+    pdf_path = folder / pdf_filename
 
     try:
         if pdf_path.exists():

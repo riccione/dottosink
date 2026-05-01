@@ -8,23 +8,38 @@ from scholar_sink.models import Paper
 
 
 def search_arxiv(query: str, limit: int) -> List[Paper]:
-    client = arxiv.Client()
+    client = arxiv.Client(num_retries=3)
     search = arxiv.Search(query=query, max_results=limit)
     papers = []
 
-    for result in client.results(search):
-        arxiv_id = result.entry_id.split("/")[-1]
-        paper = Paper(
-            arxiv_id=arxiv_id,
-            title=result.title,
-            authors=[author.name for author in result.authors],
-            published=result.published.isoformat(),
-            summary=result.summary,
-            pdf_path=None,
-            md_path=None,
-            status="pending",
-        )
-        papers.append(paper)
+    for attempt in range(3):
+        try:
+            time.sleep(3)
+            for result in client.results(search):
+                arxiv_id = result.entry_id.split("/")[-1]
+                paper = Paper(
+                    arxiv_id=arxiv_id,
+                    title=result.title,
+                    authors=[author.name for author in result.authors],
+                    published=result.published.isoformat(),
+                    summary=result.summary,
+                    pdf_path=None,
+                    md_path=None,
+                    status="pending",
+                )
+                papers.append(paper)
+            return papers
+
+        except arxiv.HTTPError as e:
+            if "429" in str(e) and attempt < 2:
+                wait_time = (attempt + 1) * 5
+                print(f"Rate limit hit. Waiting {wait_time}s before retry...")
+                time.sleep(wait_time)
+            else:
+                raise Exception(
+                    f"Arxiv search failed: {e}. "
+                    "Please wait a few minutes before trying again."
+                ) from e
 
     return papers
 

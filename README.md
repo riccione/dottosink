@@ -7,6 +7,7 @@ A local-first scientific research tool for discovering, downloading, and managin
 - **Arxiv Integration** - Search and fetch papers directly from Arxiv
 - **Local Database** - SQLite-based storage for your paper library
 - **Smart Downloads** - Rate-limited PDF downloads with automatic deduplication
+- **PDF to Markdown** - Convert downloaded PDFs to clean Markdown using marker with PyMuPDF fallback
 - **Rich CLI** - Beautiful terminal output with progress bars and tables
 - **Extensible** - Built with modular architecture for easy feature additions
 
@@ -57,6 +58,20 @@ uv run python main.py list-papers
 
 Displays all papers in your local library with ID, title, and status.
 
+### Convert PDFs to Markdown
+
+```bash
+# Convert all downloaded PDFs to Markdown
+uv run python main.py process
+```
+
+The `process` command will:
+- Find all papers with status `downloaded`
+- Convert PDFs to Markdown using `marker-pdf` (with `PyMuPDF` fallback)
+- Save output to `data/vault/`
+- Update `md_path` and set status to `processed` in the database
+- Mark failed conversions with status `failed`
+
 ## Development
 
 ### Setup Development Environment
@@ -96,13 +111,15 @@ dottosink/
 │   ├── __init__.py
 │   ├── db.py                  # Database management
 │   ├── fetcher.py             # Arxiv API and PDF downloads
-│   └── models.py              # Pydantic data models
+│   ├── models.py              # Pydantic data models
+│   └── processor.py           # PDF to Markdown conversion
 ├── tests/
-│   └── test_ingestion.py      # Test suite
+│   ├── test_ingestion.py      # Ingestion tests
+│   └── test_processor.py      # Processor tests
 ├── data/
 │   ├── library.db             # SQLite database
 │   ├── raw/                   # Downloaded PDFs
-│   └── vault/                 # Processed content
+│   └── vault/                 # Processed Markdown files
 └── pyproject.toml             # Project configuration
 ```
 
@@ -113,7 +130,8 @@ dottosink/
 - **rich** - Terminal formatting
 - **pydantic** - Data validation
 - **sqlite-utils** - Database operations
-- **marker-pdf** - PDF processing (future use)
+- **marker-pdf** - PDF to Markdown conversion
+- **PyMuPDF** - Fallback PDF text extraction
 
 ## License
 

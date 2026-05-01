@@ -1,5 +1,6 @@
 from pathlib import Path
 from sqlite_utils import Database
+from sqlite_utils.db import NotFoundError
 
 
 class DatabaseManager:
@@ -30,4 +31,8 @@ class DatabaseManager:
         return list(self.db["papers"].rows)
 
     def paper_exists(self, arxiv_id: str) -> bool:
-        return self.db["papers"].get(arxiv_id) is not None
+        try:
+            self.db["papers"].get(arxiv_id)
+            return True
+        except NotFoundError:
+            return False

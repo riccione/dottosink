@@ -66,6 +66,7 @@ def fetch(query: str, limit: int = 5):
             "Downloading papers...", total=len(new_papers)
         )
 
+        downloaded_count = 0
         for i, paper in enumerate(new_papers, 1):
             progress.update(
                 download_task,
@@ -73,7 +74,7 @@ def fetch(query: str, limit: int = 5):
             )
 
             try:
-                pdf_path = download_pdf(paper, RAW_DIR)
+                pdf_path = download_pdf(paper, RAW_DIR, pdf_url=paper.pdf_url)
                 if pdf_path:
                     db.insert_paper(
                         {
@@ -88,6 +89,7 @@ def fetch(query: str, limit: int = 5):
                         }
                     )
                     console.print(f"[green]✓[/green] {paper.title[:60]}")
+                    downloaded_count += 1
                 else:
                     console.print(f"[yellow]⊘[/yellow] {paper.title[:60]} (skipped)")
 
@@ -104,7 +106,7 @@ def fetch(query: str, limit: int = 5):
                 progress.remove_task(cooldown_task)
 
     console.print(
-        f"[bold green]Done![/bold green] Downloaded {len(new_papers)} papers."
+        f"[bold green]Done![/bold green] Downloaded {downloaded_count} of {len(new_papers)} papers."
     )
 
 

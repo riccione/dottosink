@@ -26,6 +26,7 @@ def search_arxiv(query: str, limit: int) -> List[Paper]:
                     md_path=None,
                     status="pending",
                 )
+                paper.pdf_url = result.pdf_url
                 papers.append(paper)
             return papers
 
@@ -43,7 +44,7 @@ def search_arxiv(query: str, limit: int) -> List[Paper]:
     return papers
 
 
-def download_pdf(paper: Paper, folder: Path) -> Optional[Path]:
+def download_pdf(paper: Paper, folder: Path, pdf_url: str = None) -> Optional[Path]:
     raw_dir = folder / "raw"
     raw_dir.mkdir(parents=True, exist_ok=True)
 
@@ -54,7 +55,8 @@ def download_pdf(paper: Paper, folder: Path) -> Optional[Path]:
         if pdf_path.exists():
             return pdf_path
 
-        pdf_url = get_pdf_url(paper.arxiv_id)
+        if not pdf_url:
+            pdf_url = get_pdf_url(paper.arxiv_id)
 
         response = requests.get(pdf_url, timeout=30)
         response.raise_for_status()

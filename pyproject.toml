@@ -1,0 +1,20 @@
+[project]
+name = "dottosink"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "arxiv>=3.0.0",
+    "marker-pdf>=1.10.2",
+    "pydantic-settings>=2.14.0",
+    "rich>=15.0.0",
+    "sqlite-utils>=3.39",
+    "typer>=0.25.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "ruff>=0.15.12",
+]

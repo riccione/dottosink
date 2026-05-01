@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List
 
+
 class Paper(BaseModel):
     arxiv_id: str
     title: str

@@ -72,6 +72,38 @@ The `process` command will:
 - Update `md_path` and set status to `processed` in the database
 - Mark failed conversions with status `failed`
 
+### View Paper Info
+
+```bash
+# View paper details by ID
+uv run python main.py info "2401.12345"
+
+# View paper details by partial title match
+uv run python main.py info "large language models"
+```
+
+The `info` command will:
+- Search for a paper by exact Arxiv ID or partial title (case-insensitive)
+- Display a formatted card with Title, Authors, Published Date, and Summary
+- Print an error message if no paper is found
+
+### Export Processed Papers
+
+```bash
+# Export all processed papers (default: data/context_export.md)
+uv run python main.py export
+
+# Specify custom output path
+uv run python main.py export --output "my_research.md"
+```
+
+The `export` command will:
+- Retrieve all papers with status `processed`
+- Read each paper's Markdown file from `data/vault/`
+- Combine them into a single file with clear separators: `--- # PAPER: [TITLE] ---`
+- Show progress with rich progress bars
+- Report how many papers were successfully exported
+
 ## Development
 
 ### Setup Development Environment
@@ -115,7 +147,8 @@ dottosink/
 │   └── processor.py           # PDF to Markdown conversion
 ├── tests/
 │   ├── test_ingestion.py      # Ingestion tests
-│   └── test_processor.py      # Processor tests
+│   ├── test_processor.py      # Processor tests
+│   └── test_cli_tools.py      # CLI tools (info, export) tests
 ├── data/
 │   ├── library.db             # SQLite database
 │   ├── raw/                   # Downloaded PDFs

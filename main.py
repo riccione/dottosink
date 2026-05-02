@@ -3,6 +3,7 @@ import time
 import typer
 from pathlib import Path
 from rich.console import Console
+from rich.panel import Panel
 from rich.progress import (
     Progress,
     SpinnerColumn,
@@ -193,6 +194,82 @@ def process():
             progress.advance(task)
 
     console.print("[bold green]Done![/bold green]")
+
+
+@app.command()
+def info(identifier: str):
+    """
+    Show detailed info about a paper by ID or title.
+    """
+    db = DatabaseManager(DB_PATH)
+    paper = db.get_paper(identifier)
+
+    if not paper:
+        console.print(f"[red]No paper found for identifier:[/red] {identifier}")
+        return
+
+    content = (
+        f"[bold]Title:[/bold] {paper['title']}\n"
+        f"[bold]Authors:[/bold] {paper['authors']}\n"
+        f"[bold]Published:[/bold] {paper['published']}\n\n"
+        f"[bold]Summary:[/bold]\n{paper['summary']}"
+    )
+
+    console.print(
+        Panel(
+            content,
+            title=f"Paper: {paper['arxiv_id']}",
+            border_style="cyan",
+        )
+    )
+
+
+@app.command()
+def export(output: Path = Path("data/context_export.md")):
+    """
+    Export all processed papers to a single Markdown file.
+    """
+    db = DatabaseManager(DB_PATH)
+    papers = db.get_processed_papers()
+
+    if not papers:
+        console.print("[yellow]No processed papers to export.[/yellow]")
+        return
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    exported = 0
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Exporting papers...", total=len(papers))
+
+        with open(output, "w", encoding="utf-8") as f:
+            for paper in papers:
+                progress.update(
+                    task, description=f"Exporting: {paper['title'][:50]}..."
+                )
+
+                md_path = Path(paper.get("md_path", ""))
+                if not md_path.exists():
+                    progress.advance(task)
+                    continue
+
+                content = md_path.read_text(encoding="utf-8")
+                f.write(f"--- # PAPER: {paper['title']} ---\n\n")
+                f.write(content)
+                f.write("\n\n")
+
+                exported += 1
+                progress.advance(task)
+
+    console.print(
+        f"[bold green]Done![/bold green] Exported {exported} papers to {output}"
+    )
 
 
 if __name__ == "__main__":

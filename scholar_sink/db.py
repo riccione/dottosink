@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from sqlite_utils import Database
 from sqlite_utils.db import NotFoundError
@@ -51,3 +51,21 @@ class DatabaseManager:
             return dict(self.db["papers"].get(arxiv_id))
         except NotFoundError:
             return None
+
+    def get_paper(self, identifier: str) -> Optional[dict]:
+        paper = self.get_paper_by_id(identifier)
+        if paper:
+            return paper
+
+        rows = list(
+            self.db["papers"].rows_where(
+                "LOWER(title) LIKE ?", [f"%{identifier.lower()}%"]
+            )
+        )
+        if rows:
+            return rows[0]
+
+        return None
+
+    def get_processed_papers(self) -> List[dict]:
+        return list(self.db["papers"].rows_where("status = ?", ["processed"]))

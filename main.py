@@ -14,6 +14,7 @@ from rich.table import Table
 
 from scholar_sink.db import DatabaseManager
 from scholar_sink.fetcher import search_arxiv, download_pdf
+from scholar_sink.processor import convert_pdf_to_md
 
 # Initialize Rich console for pretty output
 console = Console()
@@ -54,8 +55,14 @@ def fetch(query: str, limit: int = 5):
         papers = search_arxiv(query, limit)
         progress.update(search_task, description="Search complete", completed=True)
 
-        # Filter out existing papers
-        new_papers = [p for p in papers if not db.paper_exists(p.arxiv_id)]
+        # Filter out existing papers based on status
+        new_papers = []
+        for p in papers:
+            if db.paper_exists(p.arxiv_id):
+                existing = db.get_paper_by_id(p.arxiv_id)
+                if existing and existing.get("status") in ("downloaded", "processed"):
+                    continue
+            new_papers.append(p)
 
         if not new_papers:
             console.print("[yellow]No new papers to download.[/yellow]")
@@ -135,6 +142,57 @@ def list_papers():
         )
 
     console.print(table)
+
+
+VAULT_DIR = Path("data/vault")
+
+
+@app.command()
+def process():
+    """
+    Convert downloaded PDFs to Markdown.
+    """
+    db = DatabaseManager(DB_PATH)
+    papers = db.get_papers_by_status("downloaded")
+
+    if not papers:
+        console.print("[yellow]No downloaded papers to process.[/yellow]")
+        return
+
+    VAULT_DIR.mkdir(parents=True, exist_ok=True)
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Converting PDFs...", total=len(papers))
+
+        for paper in papers:
+            progress.update(task, description=f"Processing: {paper['title'][:50]}...")
+
+            pdf_path = Path(paper["pdf_path"])
+            if not pdf_path.exists():
+                console.print(f"[red]✗[/red] PDF not found: {paper['arxiv_id']}")
+                progress.advance(task)
+                continue
+
+            try:
+                md_path = convert_pdf_to_md(pdf_path, VAULT_DIR)
+                db.update_paper(
+                    paper["arxiv_id"],
+                    {"md_path": str(md_path), "status": "processed"},
+                )
+                console.print(f"[green]✓[/green] {paper['title'][:60]}")
+            except Exception as e:
+                db.update_paper(paper["arxiv_id"], {"status": "failed"})
+                console.print(f"[red]✗[/red] {paper['title'][:60]}: {e}")
+
+            progress.advance(task)
+
+    console.print("[bold green]Done![/bold green]")
 
 
 if __name__ == "__main__":

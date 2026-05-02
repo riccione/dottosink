@@ -110,7 +110,7 @@ class TestDownloadPdf:
         pdf_path = raw_dir / "2401.12345.pdf"
         pdf_path.write_bytes(b"existing content")
 
-        result = download_pdf(paper, tmp_path)
+        result = download_pdf(paper, raw_dir)
 
         assert result == pdf_path
         mock_sleep.assert_called_once_with(3)

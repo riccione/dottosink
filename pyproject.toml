@@ -16,6 +16,7 @@ dependencies = [
     "rich>=15.0.0",
     "sqlite-utils>=3.39",
     "typer>=0.25.1",
+    "sentence-transformers>=5.4.1",
 ]
 
 [dependency-groups]

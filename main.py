@@ -17,6 +17,7 @@ from scholar_sink.db import DatabaseManager
 from scholar_sink.fetcher import search_arxiv, download_pdf
 from scholar_sink.processor import convert_pdf_to_md
 from scholar_sink.refiner import MarkdownRefiner
+from scholar_sink.search import PaperSearcher
 
 # Initialize Rich console for pretty output
 console = Console()
@@ -196,6 +197,11 @@ def process(
                     paper["arxiv_id"],
                     {"md_path": str(md_path), "status": "processed"},
                 )
+
+                searcher = PaperSearcher()
+                embedding = searcher.generate_embedding(paper["summary"])
+                db.store_embedding(paper["arxiv_id"], embedding)
+
                 console.print(f"[green]✓[/green] {paper['title'][:60]}")
             except Exception as e:
                 db.update_paper(paper["arxiv_id"], {"status": "failed"})
@@ -287,6 +293,37 @@ def export(
     console.print(
         f"[bold green]Done![/bold green] Exported {exported} papers to {output}"
     )
+
+
+@app.command()
+def find(query: str, top_k: int = 5):
+    """
+    Semantic search for papers using natural language.
+    """
+    db = DatabaseManager(DB_PATH)
+    searcher = PaperSearcher()
+
+    papers_with_embeddings = db.get_all_embeddings()
+    if not papers_with_embeddings:
+        console.print("[yellow]No embeddings found. Run 'process' first.[/yellow]")
+        return
+
+    results = searcher.semantic_search(query, papers_with_embeddings, top_k=top_k)
+
+    if not results:
+        console.print("[yellow]No results found.[/yellow]")
+        return
+
+    table = Table(title=f"Search Results for: {query}")
+    table.add_column("Score", style="cyan", no_wrap=True)
+    table.add_column("ID", style="cyan")
+    table.add_column("Title", style="white")
+
+    for r in results:
+        score = f"{r['score']:.3f}"
+        table.add_row(score, r["paper"]["arxiv_id"], r["paper"]["title"][:60])
+
+    console.print(table)
 
 
 if __name__ == "__main__":

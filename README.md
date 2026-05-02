@@ -9,6 +9,7 @@ A local-first scientific research tool for discovering, downloading, and managin
 - **Smart Downloads** - Rate-limited PDF downloads with automatic deduplication
 - **PDF to Markdown** - Convert downloaded PDFs to clean Markdown using marker with PyMuPDF fallback
 - **Text Refinement** - Clean citations and headers from Markdown for AI-ready content
+- **Semantic Search** - Find papers by meaning using sentence-transformers embeddings
 - **Rich CLI** - Beautiful terminal output with progress bars and tables
 - **Extensible** - Built with modular architecture for easy feature additions
 
@@ -92,6 +93,22 @@ The `info` command will:
 - Display a formatted card with Title, Authors, Published Date, and Summary
 - Print an error message if no paper is found
 
+### Semantic Search
+
+```bash
+# Search papers by meaning (default: top 5 results)
+uv run python main.py find "neural networks"
+
+# Get top 10 results
+uv run python main.py find "transformer architecture" --top-k 10
+```
+
+The `find` command will:
+- Generate embeddings for your query using `sentence-transformers`
+- Compare against stored paper summary embeddings
+- Display results ranked by relevance score in a Rich table
+- Require running `process` first to generate embeddings
+
 ### Export Processed Papers
 
 ```bash
@@ -154,12 +171,14 @@ dottosink/
 │   ├── fetcher.py             # Arxiv API and PDF downloads
 │   ├── models.py              # Pydantic data models
 │   ├── processor.py           # PDF to Markdown conversion
-│   └── refiner.py            # Markdown text cleaning
+│   ├── refiner.py            # Markdown text cleaning
+│   └── search.py             # Semantic search with embeddings
 ├── tests/
 │   ├── test_ingestion.py      # Ingestion tests
 │   ├── test_processor.py      # Processor tests
 │   ├── test_cli_tools.py      # CLI tools (info, export) tests
-│   └── test_refiner.py        # Refiner (citations, sections) tests
+│   ├── test_refiner.py        # Refiner (citations, sections) tests
+│   └── test_search.py         # Semantic search tests
 ├── data/
 │   ├── library.db             # SQLite database
 │   ├── raw/                   # Downloaded PDFs
@@ -176,6 +195,7 @@ dottosink/
 - **sqlite-utils** - Database operations
 - **marker-pdf** - PDF to Markdown conversion
 - **PyMuPDF** - Fallback PDF text extraction
+- **sentence-transformers** - Semantic search embeddings
 
 ## License
 

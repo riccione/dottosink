@@ -6,7 +6,7 @@ class MarkdownRefiner:
     @staticmethod
     def strip_citations(text: str) -> str:
         patterns = [
-            r"\[\d+(?:[-,]\d+)*\]",
+            r"\[\d+(?:[-,]\s*\d+)*\]",
             r"\([A-Z][a-z]+(?:,\s*[A-Z][a-z]+)*\s*,\s*\d{4}\)",
             r"\([A-Z][a-z]+\s+et\s+al\.\s*,\s*\d{4}\)",
         ]

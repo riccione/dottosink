@@ -16,6 +16,7 @@ from rich.table import Table
 from scholar_sink.db import DatabaseManager
 from scholar_sink.fetcher import search_arxiv, download_pdf
 from scholar_sink.processor import convert_pdf_to_md
+from scholar_sink.refiner import MarkdownRefiner
 
 # Initialize Rich console for pretty output
 console = Console()
@@ -149,7 +150,9 @@ VAULT_DIR = Path("data/vault")
 
 
 @app.command()
-def process():
+def process(
+    clean: bool = typer.Option(False, "--clean", help="Clean markdown with refiner"),
+):
     """
     Convert downloaded PDFs to Markdown.
     """
@@ -182,6 +185,13 @@ def process():
 
             try:
                 md_path = convert_pdf_to_md(pdf_path, VAULT_DIR)
+
+                if clean:
+                    refiner = MarkdownRefiner()
+                    text = md_path.read_text(encoding="utf-8")
+                    text = refiner.refine(text)
+                    md_path.write_text(text, encoding="utf-8")
+
                 db.update_paper(
                     paper["arxiv_id"],
                     {"md_path": str(md_path), "status": "processed"},
@@ -225,7 +235,10 @@ def info(identifier: str):
 
 
 @app.command()
-def export(output: Path = Path("data/context_export.md")):
+def export(
+    output: Path = typer.Option("data/context_export.md", "--output", "-o"),
+    clean: bool = typer.Option(False, "--clean", help="Clean markdown with refiner"),
+):
     """
     Export all processed papers to a single Markdown file.
     """
@@ -238,6 +251,7 @@ def export(output: Path = Path("data/context_export.md")):
 
     output.parent.mkdir(parents=True, exist_ok=True)
     exported = 0
+    refiner = MarkdownRefiner() if clean else None
 
     with Progress(
         SpinnerColumn(),
@@ -260,6 +274,9 @@ def export(output: Path = Path("data/context_export.md")):
                     continue
 
                 content = md_path.read_text(encoding="utf-8")
+                if refiner:
+                    content = refiner.refine(content)
+
                 f.write(f"--- # PAPER: {paper['title']} ---\n\n")
                 f.write(content)
                 f.write("\n\n")

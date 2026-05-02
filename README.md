@@ -8,6 +8,7 @@ A local-first scientific research tool for discovering, downloading, and managin
 - **Local Database** - SQLite-based storage for your paper library
 - **Smart Downloads** - Rate-limited PDF downloads with automatic deduplication
 - **PDF to Markdown** - Convert downloaded PDFs to clean Markdown using marker with PyMuPDF fallback
+- **Text Refinement** - Clean citations and headers from Markdown for AI-ready content
 - **Rich CLI** - Beautiful terminal output with progress bars and tables
 - **Extensible** - Built with modular architecture for easy feature additions
 
@@ -63,11 +64,15 @@ Displays all papers in your local library with ID, title, and status.
 ```bash
 # Convert all downloaded PDFs to Markdown
 uv run python main.py process
+
+# Convert and clean the markdown output
+uv run python main.py process --clean
 ```
 
 The `process` command will:
 - Find all papers with status `downloaded`
 - Convert PDFs to Markdown using `marker-pdf` (with `PyMuPDF` fallback)
+- Optionally clean citations and headers with `--clean` flag
 - Save output to `data/vault/`
 - Update `md_path` and set status to `processed` in the database
 - Mark failed conversions with status `failed`
@@ -95,11 +100,15 @@ uv run python main.py export
 
 # Specify custom output path
 uv run python main.py export --output "my_research.md"
+
+# Clean markdown during export
+uv run python main.py export --clean
 ```
 
 The `export` command will:
 - Retrieve all papers with status `processed`
 - Read each paper's Markdown file from `data/vault/`
+- Optionally clean citations and headers with `--clean` flag
 - Combine them into a single file with clear separators: `--- # PAPER: [TITLE] ---`
 - Show progress with rich progress bars
 - Report how many papers were successfully exported
@@ -144,11 +153,13 @@ dottosink/
 │   ├── db.py                  # Database management
 │   ├── fetcher.py             # Arxiv API and PDF downloads
 │   ├── models.py              # Pydantic data models
-│   └── processor.py           # PDF to Markdown conversion
+│   ├── processor.py           # PDF to Markdown conversion
+│   └── refiner.py            # Markdown text cleaning
 ├── tests/
 │   ├── test_ingestion.py      # Ingestion tests
 │   ├── test_processor.py      # Processor tests
-│   └── test_cli_tools.py      # CLI tools (info, export) tests
+│   ├── test_cli_tools.py      # CLI tools (info, export) tests
+│   └── test_refiner.py        # Refiner (citations, sections) tests
 ├── data/
 │   ├── library.db             # SQLite database
 │   ├── raw/                   # Downloaded PDFs
